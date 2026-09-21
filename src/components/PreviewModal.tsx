@@ -1,5 +1,6 @@
 import { useDesigner } from '../store/DesignerContext';
 import { RenderStaticNode } from './RenderNode';
+import { UiIcon } from './icons';
 
 export default function PreviewModal({ onClose }: { onClose: () => void }) {
   const { project, currentPageId, breakpoint, dispatch } = useDesigner();
@@ -16,7 +17,7 @@ export default function PreviewModal({ onClose }: { onClose: () => void }) {
             <button key={bp} className={breakpoint === bp ? 'active' : ''} onClick={() => dispatch({ type: 'SET_BREAKPOINT', bp })}>{bp}</button>
           ))}
         </div>
-        <button onClick={onClose}>✕ Close (Esc)</button>
+        <button onClick={onClose}><UiIcon name="x" size={14} /> Close (Esc)</button>
       </div>
       <div className="preview-frame" style={{ maxWidth: width }} onClick={(e) => e.stopPropagation()}>
         {page.root.map((n) => (

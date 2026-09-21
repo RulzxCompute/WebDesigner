@@ -84,6 +84,7 @@ export interface ElementProps {
   src?: string;
   alt?: string;
   level?: number;
+  /** Icon-element glyph id from the curated set in elements/iconSet.ts. */
   icon?: string;
   openInNewTab?: boolean;
 }

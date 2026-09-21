@@ -1,5 +1,5 @@
 import type { Breakpoint, ElementNode, ElementType, StyleProps } from '../types';
-import { uid } from '../utils';
+import { clone, uid } from '../utils';
 
 function baseStyles(type: ElementType): StyleProps {
   switch (type) {
@@ -107,8 +107,6 @@ function defaultContent(type: ElementType): string | undefined {
       return 'Get started';
     case 'link':
       return 'Learn more →';
-    case 'icon':
-      return '★';
     default:
       return undefined;
   }
@@ -153,6 +151,7 @@ export function createElement(type: ElementType, overrides: Partial<ElementNode>
           : undefined,
       alt: type === 'image' ? 'Sample image' : undefined,
       level: type === 'heading' ? 2 : undefined,
+      icon: type === 'icon' ? 'star' : undefined,
       ...(overrides.props ?? {}),
     },
     styles,
@@ -176,7 +175,7 @@ export const ELEMENT_LIBRARY: LibraryItem[] = [
   { type: 'link', label: 'Link', hint: 'Hyperlink', kind: 'basic' },
   { type: 'divider', label: 'Divider', hint: 'Horizontal line', kind: 'basic' },
   { type: 'spacer', label: 'Spacer', hint: 'Vertical space', kind: 'basic' },
-  { type: 'icon', label: 'Icon', hint: 'Emoji / symbol', kind: 'basic' },
+  { type: 'icon', label: 'Icon', hint: 'SVG icon set', kind: 'basic' },
   { type: 'section', label: 'Section', hint: 'Full-width band', kind: 'layout' },
   { type: 'container', label: 'Container', hint: 'Centered wrapper', kind: 'layout' },
   { type: 'grid', label: 'Grid', hint: 'Multi-column', kind: 'layout' },
@@ -285,7 +284,7 @@ function featuresPreset(): ElementNode[] {
         mobile: {},
       },
       children: [
-        createElement('icon', { name: `Feature Icon ${i + 1}`, content: ['⚡', '📱', '🚀'][i] }),
+        createElement('icon', { name: `Feature Icon ${i + 1}`, props: { icon: ['zap', 'palette', 'mobile'][i] } }),
         createElement('heading', {
           name: `Feature H ${i + 1}`,
           content: t,
@@ -388,6 +387,33 @@ export function updateNode(nodes: ElementNode[], id: string, updater: (n: Elemen
     if (n.id === id) return updater(n);
     return { ...n, children: updateNode(n.children, id, updater) };
   });
+}
+
+/**
+ * Moves an existing node to a new index within the same or root parent.
+ * Unknown ids or missing parents leave the tree untouched (never drops nodes).
+ */
+export function moveNodeToIndex(
+  nodes: ElementNode[],
+  id: string,
+  parentId: string | null,
+  index: number,
+): ElementNode[] {
+  const moving = findNode(nodes, id);
+  if (!moving) return nodes;
+  if (parentId !== null && !findNode(nodes, parentId)) return nodes;
+  const without = removeNode(nodes, id);
+  return insertNode(without, clone(moving), parentId, index);
+}
+
+/** Returns the parent id of a node, or null for top-level nodes (undefined when missing). */
+export function findParentId(nodes: ElementNode[], id: string, parentId: string | null = null): string | null | undefined {
+  for (const n of nodes) {
+    if (n.id === id) return parentId;
+    const found = findParentId(n.children, id, n.id);
+    if (found !== undefined) return found;
+  }
+  return undefined;
 }
 
 export function countNodes(nodes: ElementNode[]): number {

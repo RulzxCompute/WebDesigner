@@ -3,6 +3,8 @@ import { useDesigner } from '../store/DesignerContext';
 import { ELEMENT_LIBRARY, SECTION_PRESETS } from '../elements/definitions';
 import type { ElementType } from '../types';
 import { TEMPLATES } from '../templates';
+import { UiIcon } from './icons';
+import type { UiIconName } from './icons';
 
 export default function ElementLibrary() {
   const { dispatch } = useDesigner();
@@ -38,7 +40,7 @@ export default function ElementLibrary() {
                 onClick={() => addBasic(item.type)}
                 title={`${item.label} — ${item.hint}`}
               >
-                <span className="lib-icon">{iconFor(item.type)}</span>
+                <span className="lib-icon"><UiIcon name={iconFor(item.type)} size={20} /></span>
                 <span className="lib-label">{item.label}</span>
               </button>
             ))}
@@ -54,7 +56,7 @@ export default function ElementLibrary() {
                 onClick={() => addBasic(item.type)}
                 title={`${item.label} — ${item.hint}`}
               >
-                <span className="lib-icon">{iconFor(item.type)}</span>
+                <span className="lib-icon"><UiIcon name={iconFor(item.type)} size={20} /></span>
                 <span className="lib-label">{item.label}</span>
               </button>
             ))}
@@ -98,19 +100,19 @@ export default function ElementLibrary() {
   );
 }
 
-function iconFor(type: ElementType): string {
+function iconFor(type: ElementType): UiIconName {
   switch (type) {
-    case 'heading': return 'H';
-    case 'text': return '¶';
-    case 'button': return '▢';
-    case 'image': return '🖼';
-    case 'link': return '🔗';
-    case 'divider': return '―';
-    case 'spacer': return '↕';
-    case 'icon': return '★';
-    case 'section': return '▤';
-    case 'container': return '▦';
-    case 'grid': return '⊞';
-    default: return '•';
+    case 'heading': return 'heading';
+    case 'text': return 'text';
+    case 'button': return 'buttonEl';
+    case 'image': return 'image';
+    case 'link': return 'link';
+    case 'divider': return 'divider';
+    case 'spacer': return 'spacer';
+    case 'icon': return 'starEl';
+    case 'section': return 'section';
+    case 'container': return 'container';
+    case 'grid': return 'grid';
+    default: return 'plus';
   }
 }

@@ -1,5 +1,6 @@
 import type { ElementNode, Page, WebDesignerProject } from '../types';
 import { cssPropName, escapeHtml } from '../utils';
+import { iconBody, resolveElementIconId } from '../elements/iconSet';
 
 export function collectFonts(project: WebDesignerProject): string[] {
   const fonts = new Set<string>();
@@ -136,8 +137,11 @@ function renderNode(node: ElementNode): string {
       return `<hr class="${cls}"${anim} />`;
     case 'spacer':
       return `<div class="${cls}" aria-hidden="true"${anim}></div>`;
-    case 'icon':
-      return `<span class="${cls}" role="img" aria-label="${escapeHtml(node.name)}"${anim}>${text}</span>`;
+    case 'icon': {
+      const iconId = resolveElementIconId(node.props.icon, node.content);
+      const svg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconBody(iconId)}</svg>`;
+      return `<span class="${cls} wd-icon" role="img" aria-label="${escapeHtml(node.name)}"${anim}>${svg}</span>`;
+    }
     default:
       return `<div class="${cls}"${anim}>${text}${children}</div>`;
   }
@@ -150,6 +154,8 @@ body { margin: 0; font-family: Inter, system-ui, sans-serif; color: #111827; bac
 img { max-width: 100%; height: auto; }
 a { text-decoration: none; }
 .wd-page { min-height: 100vh; }
+.wd-icon { display: inline-block; line-height: 1; vertical-align: middle; }
+.wd-icon svg { width: 1em; height: 1em; display: block; }
 /* animations */
 [data-anim="fadeIn"] { opacity: 0; }
 [data-anim="fadeUp"] { opacity: 0; transform: translateY(24px); }

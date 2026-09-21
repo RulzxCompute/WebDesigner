@@ -1,6 +1,8 @@
 import type { CSSProperties } from 'react';
 import type { Breakpoint, ElementNode, StyleProps } from '../types';
 import { mergeStyles } from '../utils';
+import { resolveElementIconId } from '../elements/iconSet';
+import { ElementIcon } from './icons';
 
 const FONT_FALLBACK = 'Inter, system-ui, sans-serif';
 
@@ -73,7 +75,7 @@ export function RenderStaticNode({ node, breakpoint }: { node: ElementNode; brea
     case 'spacer':
       return <div className={cls} style={mergedStyle} aria-hidden="true" />;
     case 'icon':
-      return <span className={cls} style={mergedStyle} role="img" aria-label={node.name}>{node.content}</span>;
+      return <span className={`${cls} wd-icon`} style={mergedStyle} role="img" aria-label={node.name}><ElementIcon id={resolveElementIconId(node.props.icon, node.content)} /></span>;
     default:
       return <div className={cls} style={mergedStyle}>{kids}</div>;
   }

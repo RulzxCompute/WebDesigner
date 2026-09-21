@@ -8,7 +8,7 @@ import { getTemplate } from '../templates';
 
 export type EditorMode = 'edit' | 'preview';
 
-interface DesignerState {
+export interface DesignerState {
   project: WebDesignerProject;
   currentPageId: string;
   selectedId: string | null;
@@ -19,6 +19,12 @@ interface DesignerState {
   lastSavedAt: string | null;
   saveError: string | null;
   clipboard: ElementNode | null;
+  /**
+   * Snapshot taken when a drag/keyboard-nudge session starts. Live updates
+   * apply without touching history; COMMIT pushes this single snapshot so
+   * the whole gesture undoes in one step. Null when idle.
+   */
+  transientBase: WebDesignerProject | null;
 }
 
 type Action =
@@ -26,6 +32,10 @@ type Action =
   | { type: 'ADD_NODE'; node: ElementNode; parentId: string | null; index?: number }
   | { type: 'ADD_PRESET_NODES'; nodes: ElementNode[] }
   | { type: 'UPDATE_NODE'; id: string; updater: (n: ElementNode) => ElementNode }
+  | { type: 'BEGIN_TRANSIENT' }
+  | { type: 'TRANSIENT_ROOT'; mutate: (root: ElementNode[]) => ElementNode[] }
+  | { type: 'COMMIT_TRANSIENT' }
+  | { type: 'CANCEL_TRANSIENT' }
   | { type: 'DELETE'; id: string }
   | { type: 'DUPLICATE'; id: string }
   | { type: 'MOVE'; id: string; direction: 'up' | 'down' | 'left' | 'right' }
@@ -47,6 +57,8 @@ type Action =
   | { type: 'MARK_SAVED' }
   | { type: 'SAVE_ERROR'; error: string };
 
+export type DesignerAction = Action;
+
 function currentRoot(state: DesignerState): ElementNode[] {
   const page = state.project.pages.find((p) => p.id === state.currentPageId);
   return page ? page.root : [];
@@ -63,6 +75,17 @@ function withRoot(state: DesignerState, root: ElementNode[]): WebDesignerProject
 function pushHistory(state: DesignerState, nextProject: WebDesignerProject): DesignerState {
   const past = [...state.past, clone(state.project)].slice(-60);
   return { ...state, project: nextProject, past, future: [] };
+}
+
+/** Folds an in-progress drag into a single history entry (used before undo/redo). */
+function commitPending(state: DesignerState): DesignerState {
+  if (!state.transientBase) return state;
+  return {
+    ...state,
+    past: [...state.past, clone(state.transientBase)].slice(-60),
+    future: [],
+    transientBase: null,
+  };
 }
 
 function moveNodeInTree(root: ElementNode[], id: string, dir: 'up' | 'down' | 'left' | 'right'): ElementNode[] {
@@ -131,7 +154,7 @@ function moveNodeInTree(root: ElementNode[], id: string, dir: 'up' | 'down' | 'l
   return root;
 }
 
-function reducer(state: DesignerState, action: Action): DesignerState {
+export function designerReducer(state: DesignerState, action: Action): DesignerState {
   switch (action.type) {
     case 'ADD': {
       const node = createElement(action.elementType);
@@ -158,6 +181,27 @@ function reducer(state: DesignerState, action: Action): DesignerState {
     case 'UPDATE_NODE': {
       const root = updateNode(currentRoot(state), action.id, action.updater);
       return pushHistory(state, withRoot(state, root));
+    }
+    case 'BEGIN_TRANSIENT': {
+      if (state.transientBase) return state;
+      return { ...state, transientBase: clone(state.project) };
+    }
+    case 'TRANSIENT_ROOT': {
+      const base = state.transientBase ?? clone(state.project);
+      return { ...state, transientBase: base, project: withRoot(state, action.mutate(currentRoot(state))) };
+    }
+    case 'COMMIT_TRANSIENT': {
+      if (!state.transientBase) return state;
+      return {
+        ...state,
+        past: [...state.past, clone(state.transientBase)].slice(-60),
+        future: [],
+        transientBase: null,
+      };
+    }
+    case 'CANCEL_TRANSIENT': {
+      if (!state.transientBase) return state;
+      return { ...state, project: state.transientBase, transientBase: null };
     }
     case 'DELETE': {
       const root = removeNode(currentRoot(state), action.id);
@@ -238,7 +282,7 @@ function reducer(state: DesignerState, action: Action): DesignerState {
     case 'SET_MODE':
       return { ...state, mode: action.mode };
     case 'SET_PAGE':
-      return { ...state, currentPageId: action.pageId, selectedId: null };
+      return { ...state, currentPageId: action.pageId, selectedId: null, transientBase: null };
     case 'LOAD_PROJECT':
     case 'NEW_PROJECT': {
       const pages = action.project.pages.length ? action.project.pages : defaultProject().pages;
@@ -249,6 +293,7 @@ function reducer(state: DesignerState, action: Action): DesignerState {
         selectedId: null,
         past: [],
         future: [],
+        transientBase: null,
       };
     }
     case 'APPLY_TEMPLATE': {
@@ -286,23 +331,25 @@ function reducer(state: DesignerState, action: Action): DesignerState {
       return pushHistory(state, next);
     }
     case 'UNDO': {
-      if (!state.past.length) return state;
-      const prev = state.past[state.past.length - 1];
+      const committed = commitPending(state);
+      if (!committed.past.length) return committed;
+      const prev = committed.past[committed.past.length - 1];
       return {
-        ...state,
+        ...committed,
         project: clone(prev),
-        past: state.past.slice(0, -1),
-        future: [clone(state.project), ...state.future].slice(0, 60),
+        past: committed.past.slice(0, -1),
+        future: [clone(committed.project), ...committed.future].slice(0, 60),
         selectedId: null,
       };
     }
     case 'REDO': {
-      if (!state.future.length) return state;
-      const [next, ...rest] = state.future;
+      const committed = commitPending(state);
+      if (!committed.future.length) return committed;
+      const [next, ...rest] = committed.future;
       return {
-        ...state,
+        ...committed,
         project: clone(next),
-        past: [...state.past, clone(state.project)].slice(-60),
+        past: [...committed.past, clone(committed.project)].slice(-60),
         future: rest,
         selectedId: null,
       };
@@ -361,24 +408,31 @@ function findById(nodes: ElementNode[], id: string | null): ElementNode | null {
   return walk(nodes);
 }
 
+export function createInitialState(project: WebDesignerProject): DesignerState {
+  return {
+    project,
+    currentPageId: project.pages[0]?.id ?? 'home',
+    selectedId: null,
+    breakpoint: 'desktop',
+    mode: 'edit',
+    past: [],
+    future: [],
+    lastSavedAt: null,
+    saveError: null,
+    clipboard: null,
+    transientBase: null,
+  };
+}
+
 export function DesignerProvider({ children }: { children: ReactNode }) {
   const initial = useMemo(() => {
     const stored = loadLocal();
     const project = stored ?? defaultProject();
-    return {
-      project,
-      currentPageId: project.pages[0]?.id ?? 'home',
-      selectedId: null as string | null,
-      breakpoint: 'desktop' as Breakpoint,
-      mode: 'edit' as const,
-      past: [] as WebDesignerProject[],
-      future: [] as WebDesignerProject[],
-      lastSavedAt: stored ? stored.updatedAt : null,
-      saveError: null as string | null,
-      clipboard: null as ElementNode | null,
-    } satisfies DesignerState;
+    const state = createInitialState(project);
+    if (stored) state.lastSavedAt = stored.updatedAt;
+    return state;
   }, []);
-  const [state, dispatch] = useReducer(reducer, initial);
+  const [state, dispatch] = useReducer(designerReducer, initial);
 
   const saveNow = useCallback(() => {
     // read latest from localStorage? no — caller should use state via ref; simplest: persist on effect

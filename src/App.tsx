@@ -9,16 +9,18 @@ import PreviewModal from './components/PreviewModal';
 import { countNodes } from './elements/definitions';
 
 const selectedMirror: { current: string | null } = { current: null };
+const transientMirror: { current: boolean } = { current: false };
 
 function Shell() {
   const [preview, setPreview] = useState(false);
-  const { dispatch, project, currentPageId, selectedId } = useDesigner();
+  const { dispatch, project, currentPageId, selectedId, transientBase } = useDesigner();
   const page = project.pages.find((p) => p.id === currentPageId);
   const total = page ? countNodes(page.root) : 0;
 
   useEffect(() => {
     selectedMirror.current = selectedId;
-  }, [selectedId]);
+    transientMirror.current = transientBase !== null;
+  }, [selectedId, transientBase]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -26,11 +28,18 @@ function Shell() {
       const target = e.target as HTMLElement | null;
       const typing = Boolean(target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable));
       if (e.key === 'Escape') {
+        if (transientMirror.current) {
+          // Cancel an in-progress drag/nudge gesture, keep the selection.
+          dispatch({ type: 'CANCEL_TRANSIENT' });
+          return;
+        }
         setPreview(false);
         if (!typing) dispatch({ type: 'SELECT', id: null });
         return;
       }
       if (typing) return;
+      // Don't clobber an in-progress drag gesture (undo/redo safely commit it).
+      if (transientMirror.current) return;
       if (mod && e.key.toLowerCase() === 's') {
         e.preventDefault();
         dispatch({ type: 'MARK_SAVED' });
@@ -76,7 +85,7 @@ function Shell() {
       </div>
       <footer className="statusbar">
         <span>{total} elements</span>
-        <span className="muted">Ctrl+S save · Ctrl+Z undo · Ctrl+Shift+Z redo · Del delete · Ctrl+D duplicate · double-click text to edit</span>
+        <span className="muted">Drag handles to move / resize · Arrows nudge · Ctrl+Z undo · Del delete · Ctrl+D duplicate</span>
         <span className="muted">{page?.name} · {project.pages.length} page(s)</span>
       </footer>
       {preview && <PreviewModal onClose={() => setPreview(false)} />}

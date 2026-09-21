@@ -3,6 +3,9 @@ import { useDesigner } from '../store/DesignerContext';
 import { exportProjectFiles } from '../exporter/generate';
 import { blankProject, serializeProject, parseProjectFile } from '../storage/projectStorage';
 import { downloadTextFile } from '../utils';
+import { UiIcon } from './icons';
+
+const BP_ICON = { desktop: 'monitor', tablet: 'tablet', mobile: 'smartphone' } as const;
 
 export default function Toolbar({ onPreview }: { onPreview: () => void }) {
   const { project, dispatch, canUndo, canRedo, lastSavedAt, saveError, breakpoint } = useDesigner();
@@ -79,21 +82,27 @@ export default function Toolbar({ onPreview }: { onPreview: () => void }) {
   return (
     <header className="toolbar">
       <div className="brand">
-        <span className="logo">◧</span>
+        <span className="logo"><UiIcon name="logo" size={16} /></span>
         <strong>WebDesigner</strong>
         <span className="project-name" title="Project name">{project.name}</span>
         <span className="save-state" title={saveError || undefined}>
-          {saveError ? `⚠ ${saveError}` : lastSavedAt ? `● autosaved ${new Date(lastSavedAt).toLocaleTimeString()}` : '●'}
+          {saveError ? (
+            <><UiIcon name="alert" size={13} /> {saveError}</>
+          ) : lastSavedAt ? (
+            <><span className="save-dot" aria-hidden="true" /> autosaved {new Date(lastSavedAt).toLocaleTimeString()}</>
+          ) : (
+            <span className="save-dot" aria-hidden="true" />
+          )}
         </span>
       </div>
       <div className="toolbar-actions">
-        <button title="Undo (Ctrl+Z)" disabled={!canUndo} onClick={() => dispatch({ type: 'UNDO' })}>↩</button>
-        <button title="Redo (Ctrl+Shift+Z)" disabled={!canRedo} onClick={() => dispatch({ type: 'REDO' })}>↪</button>
+        <button title="Undo (Ctrl+Z)" disabled={!canUndo} onClick={() => dispatch({ type: 'UNDO' })} aria-label="Undo"><UiIcon name="undo" size={15} /></button>
+        <button title="Redo (Ctrl+Shift+Z)" disabled={!canRedo} onClick={() => dispatch({ type: 'REDO' })} aria-label="Redo"><UiIcon name="redo" size={15} /></button>
         <span className="sep" />
         <div className="bp-switch" role="tablist" aria-label="Responsive preview">
           {(['desktop', 'tablet', 'mobile'] as const).map((bp) => (
             <button key={bp} className={breakpoint === bp ? 'active' : ''} title={`${bp} preview`} onClick={() => dispatch({ type: 'SET_BREAKPOINT', bp })}>
-              {bp === 'desktop' ? '🖥' : bp === 'tablet' ? '▦' : '📱'} {bp}
+              <UiIcon name={BP_ICON[bp]} size={14} /> {bp}
             </button>
           ))}
         </div>
@@ -101,7 +110,7 @@ export default function Toolbar({ onPreview }: { onPreview: () => void }) {
         <button onClick={() => dispatch({ type: 'NEW_PROJECT', project: blankProject() })} title="New blank project">New</button>
         <button onClick={doImportProject} title="Open .webdesigner file">Open</button>
         <button onClick={doExportProject} title="Save project as .webdesigner file">Save file</button>
-        <button className="primary-ghost" onClick={onPreview} title="Preview final website">Preview</button>
+        <button className="primary-ghost" onClick={onPreview} title="Preview final website"><UiIcon name="eye" size={14} /> Preview</button>
         <button className="primary" disabled={exporting} onClick={doExportZip} title="Export clean static website (zip)">
           {exporting ? 'Exporting…' : 'Export Website'}
         </button>

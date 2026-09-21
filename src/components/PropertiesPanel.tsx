@@ -1,5 +1,7 @@
 import { useDesigner } from '../store/DesignerContext';
 import type { AnimationType, Breakpoint } from '../types';
+import { ELEMENT_ICONS } from '../elements/iconSet';
+import { ElementIcon } from './icons';
 
 const FONTS = [
   'Inter, system-ui, sans-serif',
@@ -43,11 +45,11 @@ export default function PropertiesPanel() {
   const setContent = (value: string) => {
     dispatch({ type: 'UPDATE_NODE', id: n.id, updater: (el) => ({ ...el, content: value }) });
   };
-  const setProp = (key: 'href' | 'src' | 'alt' | 'level' | 'openInNewTab', value: string | number | boolean) => {
+  const setProp = (key: 'href' | 'src' | 'alt' | 'level' | 'icon' | 'openInNewTab', value: string | number | boolean) => {
     dispatch({ type: 'UPDATE_NODE', id: n.id, updater: (el) => ({ ...el, props: { ...el.props, [key]: value } }) });
   };
 
-  const isText = ['heading', 'text', 'paragraph', 'button', 'link', 'icon'].includes(n.type);
+  const isText = ['heading', 'text', 'paragraph', 'button', 'link'].includes(n.type);
 
   return (
     <div className="panel props">
@@ -67,6 +69,33 @@ export default function PropertiesPanel() {
           <>
             <label>Link URL<input value={n.props.href ?? ''} onChange={(e) => setProp('href', e.target.value)} placeholder="https://… or #section" /></label>
             <label className="row"><input type="checkbox" checked={!!n.props.openInNewTab} onChange={(e) => setProp('openInNewTab', e.target.checked)} /> Open in new tab</label>
+          </>
+        )}
+        {n.type === 'icon' && (
+          <>
+            <label>Icon
+              <span className="hint">Pick an SVG icon — no emoji needed. Size and color are below.</span>
+              <span className="icon-picker" role="listbox" aria-label="Choose icon">
+                {ELEMENT_ICONS.map((ic) => (
+                  <button
+                    key={ic.id}
+                    type="button"
+                    role="option"
+                    aria-selected={(n.props.icon ?? 'star') === ic.id}
+                    aria-label={ic.label}
+                    title={ic.label}
+                    className={(n.props.icon ?? 'star') === ic.id ? 'active' : ''}
+                    onClick={() => setProp('icon', ic.id)}
+                  >
+                    <ElementIcon id={ic.id} size={20} />
+                  </button>
+                ))}
+              </span>
+            </label>
+            <div className="grid2">
+              <label>Size<input value={st('fontSize')} onChange={(e) => setStyle('fontSize', e.target.value)} placeholder="28px" /></label>
+              <label>Color<input type="color" value={toColor(st('color') || '#111827')} onChange={(e) => setStyle('color', e.target.value)} /></label>
+            </div>
           </>
         )}
         {n.type === 'image' && (

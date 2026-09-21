@@ -105,15 +105,15 @@ function featuresRow(): ElementNode {
   const box = createElement('container', { name: 'Features Wrap' });
   const grid = createElement('grid', { name: 'Feature Grid' });
   grid.children = [
-    { icon: '⚡', t: 'Fast', d: 'Static output loads instantly anywhere.' },
-    { icon: '🎨', t: 'Designed', d: 'Clean layout with full style control.' },
-    { icon: '📱', t: 'Responsive', d: 'Looks great on desktop and mobile.' },
+    { icon: 'zap', t: 'Fast', d: 'Static output loads instantly anywhere.' },
+    { icon: 'palette', t: 'Designed', d: 'Clean layout with full style control.' },
+    { icon: 'mobile', t: 'Responsive', d: 'Looks great on desktop and mobile.' },
   ].map((f, i) =>
     createElement('container', {
       name: `Card ${i + 1}`,
       styles: { desktop: { border: '1px solid #e5e7eb', borderRadius: '14px', paddingTop: '24px', paddingBottom: '24px', paddingLeft: '24px', paddingRight: '24px', background: '#f8fafc' }, tablet: {}, mobile: {} },
       children: [
-        createElement('icon', { name: `Icon ${i + 1}`, content: f.icon }),
+        createElement('icon', { name: `Icon ${i + 1}`, props: { icon: f.icon } }),
         createElement('heading', { name: `Card H ${i + 1}`, content: f.t, props: { level: 3 }, styles: { desktop: { fontSize: '20px' }, tablet: {}, mobile: {} } }),
         createElement('paragraph', { name: `Card P ${i + 1}`, content: f.d }),
       ],

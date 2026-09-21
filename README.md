@@ -5,7 +5,7 @@ Visual static website builder. Design portfolio, landing, business, event, bio, 
 ## Features
 
 - Visual canvas: add, select, move, resize, duplicate, delete, rename, reorder
-- Elements: heading, text, button, image, link, divider, spacer, icon + section/container/grid
+- Elements: heading, text, button, image, link, divider, spacer, icon (24 curated SVG glyphs, no emoji) + section/container/grid
 - Preset sections: hero, features, about, services, contact, footer
 - 6 ready templates: personal portfolio, developer portfolio, product landing, business landing, event, bio/links
 - Properties panel: typography, layout (flex/grid), spacing, colors, borders, position

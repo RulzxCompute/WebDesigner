@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useDesigner } from '../store/DesignerContext';
 import type { ElementNode } from '../types';
+import { UiIcon } from './icons';
 
 export default function LayersPanel() {
   const { project, currentPageId, selectedId, dispatch } = useDesigner();
@@ -24,7 +25,7 @@ export default function LayersPanel() {
     <div className="panel layers">
       <div className="panel-title">Layers</div>
       <div className="tree">
-        <div className="tree-page">📄 {page.name}</div>
+        <div className="tree-page"><UiIcon name="fileText" size={14} /> {page.name}</div>
         {page.root.map((n) => (
           <TreeRow key={n.id} node={n} depth={0} selectedId={selectedId} editingId={editingId} editName={editName} setEditName={setEditName} onSelect={(id) => dispatch({ type: 'SELECT', id })} onStartRename={startRename} onCommit={commitRename} />
         ))}
@@ -92,8 +93,8 @@ function TreeRow(props: {
           <span className="tree-name">{node.name}</span>
         )}
         <span className="tree-actions">
-          <button title="Move up" onClick={(e) => { e.stopPropagation(); dispatch({ type: 'MOVE', id: node.id, direction: 'up' }); }}>↑</button>
-          <button title="Move down" onClick={(e) => { e.stopPropagation(); dispatch({ type: 'MOVE', id: node.id, direction: 'down' }); }}>↓</button>
+          <button title="Move up" aria-label="Move up" onClick={(e) => { e.stopPropagation(); dispatch({ type: 'MOVE', id: node.id, direction: 'up' }); }}><UiIcon name="chevronUp" size={12} /></button>
+          <button title="Move down" aria-label="Move down" onClick={(e) => { e.stopPropagation(); dispatch({ type: 'MOVE', id: node.id, direction: 'down' }); }}><UiIcon name="chevronDown" size={12} /></button>
         </span>
       </div>
       {node.children.map((c) => (
