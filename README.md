@@ -19,13 +19,14 @@ Visual static website builder. Design portfolio, landing, business, event, bio, 
 
 ## Screenshots
 
-![Uploading Screenshot 2026-09-21 185003.png…]()
+<img width="1920" height="1080" alt="Screenshot 2026-09-21 185003" src="https://github.com/user-attachments/assets/92964a6b-8a80-46ef-8d81-f72c34a7d49b" />
+
 
 
 ## Getting Started
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/RulzxCompute/WebDesigner
 cd WebDesigner
 npm install
 npm run dev
