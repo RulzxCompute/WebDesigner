@@ -19,11 +19,8 @@ Visual static website builder. Design portfolio, landing, business, event, bio, 
 
 ## Screenshots
 
-> Placeholder — add screenshots here:
->
-> - `docs/screenshots/editor.png`
-> - `docs/screenshots/preview.png`
-> - `docs/screenshots/export.png`
+![Uploading Screenshot 2026-09-21 185003.png…]()
+
 
 ## Getting Started
 
